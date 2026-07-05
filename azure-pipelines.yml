@@ -21,6 +21,7 @@ variables:
   imageTag: '$(Build.BuildId)' 
   kubernetesNamespace: 'dev'
   TF_PLAN_NAME: 'tfplan'
+  service_connection: 'azserviecconnection'
 
 
 
@@ -97,7 +98,7 @@ stages:
               provider: 'azurerm'
               command: 'init'
               workingDirectory: $(WORKING_DIR)
-              backendServiceArm: 'azserviecconnection'
+              backendServiceArm: '$(service_connection)'
               backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
               backendAzureRmResourceGroupName: 'donotdeletemygroup'
               backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
@@ -117,7 +118,7 @@ stages:
               provider: 'azurerm'
               command: 'plan'
               workingDirectory: '$(WORKING_DIR)'
-              environmentServiceNameAzureRM: 'azserviecconnection'
+              environmentServiceNameAzureRM: '$(service_connection)'
               commandOptions: '-out=$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
 
           - task: PublishPipelineArtifact@1
@@ -175,7 +176,7 @@ stages:
           provider: 'azurerm'
           command: 'init'
           workingDirectory: '$(WORKING_DIR)'
-          backendServiceArm: 'azserviecconnection'
+          backendServiceArm: '$(service_connection)'
           backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
           backendAzureRmResourceGroupName: 'donotdeletemygroup'
           backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
@@ -194,7 +195,7 @@ stages:
           provider: 'azurerm'
           command: 'apply'
           workingDirectory: $(WORKING_DIR)
-          environmentServiceNameAzureRM: 'azserviecconnection'
+          environmentServiceNameAzureRM: '$(service_connection)'
           commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
 
 
@@ -224,7 +225,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Login to ACR'
             inputs:
-              azureSubscription: 'azserviecconnection'
+              azureSubscription: '$(service_connection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -266,7 +267,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Connect to AKS'
             inputs:
-              azureSubscription: 'azserviecconnection'
+              azureSubscription: '$(service_connection)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
