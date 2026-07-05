@@ -6,13 +6,13 @@
 module "acrs" {
   source     = "../../modules/acr"
   acrdetails = var.acrs_values
-  depends_on = [module.rgs]
+  # depends_on = [module.rgs]
 }
 
 module "aks" {
   source            = "../../modules/kubernetes_cluster"
   aksclusterdetails = var.aks_clusters_values
-  depends_on        = [module.rgs]
+  # depends_on        = [module.rgs]
 }
 
 
