@@ -1,7 +1,7 @@
-module "rgs" {
-  source    = "../../modules/resource_group"
-  rgdetails = var.resource_groups_values
-}
+# module "rgs" {
+#   source    = "../../modules/resource_group"
+#   rgdetails = var.resource_groups_values
+# }
 
 module "acrs" {
   source     = "../../modules/acr"

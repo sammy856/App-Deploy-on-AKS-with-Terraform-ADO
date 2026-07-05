@@ -1,9 +1,9 @@
-resource_groups_values = {
-  rg1 = {
-    rgname   = "donotdeletemygroup"
-    location = "japan east"
-  }
-}
+# resource_groups_values = {
+#   rg1 = {
+#     rgname   = "donotdeletemygroup"
+#     location = "japan east"
+#   }
+# }
 
 
 

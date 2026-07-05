@@ -1,9 +1,9 @@
-variable "resource_groups_values" {
-  type = map(object({
-    rgname   = string
-    location = string
-  }))
-}
+# variable "resource_groups_values" {
+#   type = map(object({
+#     rgname   = string
+#     location = string
+#   }))
+# }
 
 variable "acrs_values" {
   type = map(object({
