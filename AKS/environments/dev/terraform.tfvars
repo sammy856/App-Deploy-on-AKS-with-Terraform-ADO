@@ -1,7 +1,7 @@
 resource_groups_values = {
   rg1 = {
-    rgname   = "aks-rg"
-    location = "west us"
+    rgname   = "donotdeletemygroup"
+    location = "japan east"
   }
 }
 
@@ -11,8 +11,8 @@ resource_groups_values = {
 aks_clusters_values = {
   cluster = {
     name               = "sammyaks"
-    location           = "west us"
-    rgname             = "aks-rg"
+    location           = "japan east"
+    rgname             = "donotdeletemygroup"
     dns_prefix         = "sammyaksdns"
     kubernetes_version = "1.34.7"
     node_count         = 1
@@ -23,9 +23,9 @@ aks_clusters_values = {
 
 acrs_values = {
   acr = {
-    name     = "sammyacr"
-    location = "west us"
-    rgname   = "aks-rg"
+    name     = "sameeracr"
+    location = "japan east"
+    rgname   = "donotdeletemygroup"
     sku      = "Basic"
   }
 }
