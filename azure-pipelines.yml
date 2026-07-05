@@ -1,7 +1,7 @@
-trigger: none
-  # branches:
-  #   include:
-  #     - main 
+trigger: 
+  branches:
+    include:
+      - main 
 
 
 pr:
@@ -11,7 +11,7 @@ pr:
 
 variables:
   azureServiceConnection: 'YOUR-AZURE-SERVICE-CONNECTION' 
-  terraformWorkingDirectory: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
+  WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
   terraformVersion: '1.15.6' 
   resourceGroupName: 'aks-rg' 
   aksClusterName: 'sammyaks' 
@@ -20,10 +20,11 @@ variables:
   imageRepository: 'microtodo-app' 
   imageTag: '$(Build.BuildId)' 
   kubernetesNamespace: 'dev'
+  TF_PLAN_NAME: 'tfplan'
 
 
 stages:
-  - stage: Security&ComplianceCheck
+  - stage: securityandcompliancecheck
     jobs:
       - job: SecurityScanJob
         displayName: Security Scan Job
@@ -55,7 +56,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                tflint --chdir=$(WORKING_DIR) --recursive       
+                tflint --chdir=$(System.DefaultWorkingDirectory) --recursive       
 
           - task: Bash@3
             displayName: 'Run Checkov Scan'
@@ -63,7 +64,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                checkov -d $(WORKING_DIR) \
+                checkov -d $(System.DefaultWorkingDirectory) \
                   --framework terraform \
                   -o junitxml > Checkov-Result.xml      
 
@@ -78,10 +79,10 @@ stages:
 # Stage 2 - Terraform Plan
 # ============================================================
 
-  - stage: TerraformInitialization&PlanningStage
+  - stage: TerraformInitializationandPlanningStage
     displayName: Terraform Initialization & Planning Stage
     jobs:
-      - job:  TerraformInitialization&PlanningJob
+      - job:  TerraformInitializationandPlanningJob
         displayName: Terraform Initialization & Planning Job
         steps:
           - task: TerraformInstaller@1
@@ -89,5 +90,110 @@ stages:
               terraformVersion: '$(terraformVersion)'
 
               
-          
+          - task: TerraformTask@5
+            displayName: Terraform Init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: $(WORKING_DIR)
+              backendServiceArm: 'azserviecconnection'
+              backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+              backendAzureRmResourceGroupName: 'donotdeletemygroup'
+              backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+              backendAzureRmContainerName: 'mycontainer'
+              backendAzureRmKey: 'dev.terraform.tfstate'
+
+          - task: TerraformTask@5
+            displayName: Terraform Validate
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: $(WORKING_DIR)
+
+          - task: TerraformTask@5
+            displayName: 'Terraform Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(WORKING_DIR)'
+              environmentServiceNameAzureRM: 'myazconnection'
+              commandOptions: '-out=$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan Artifact'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
+              artifact: 'terraform-plan'
+              publishLocation: 'pipeline'
+
+# ============================================================
+# Stage 3 - Terraform Apply
+# ============================================================
+
+  - stage: TerraformApply
+    displayName: 'Infrastructure Deployment'
+    dependsOn: TerraformPlan
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+    jobs:
+
+    # ==========================================================
+    # Manual Approval
+    # ==========================================================
+    - job: ManualApproval
+      displayName: 'Infrastructure Change Approval'
+      pool: server
+
+      steps:
+      - task: ManualValidation@0
+        displayName: 'Review Terraform Plan'
+        timeoutInMinutes: 1440
+        inputs:
+          notifyUsers: |
+            benamikumar@gmail.com
+          instructions: |
+            Please review Terraform plan output and approve deployment.
+          onTimeout: reject
+
+    # ==========================================================
+    # Terraform Apply
+    # ==========================================================
+    - job: TerraformApplyJob
+      displayName: 'Apply Approved Infrastructure Changes'
+      dependsOn: ManualApproval
+
+      steps:
+
+      - task: TerraformInstaller@1
+        displayName: 'Install Terraform CLI'
+        inputs:
+          terraformVersion: $(TF_VERSION)
+
+      - task: TerraformTask@5
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(WORKING_DIR)'
+          backendServiceArm: 'azserviecconnection'
+          backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+          backendAzureRmResourceGroupName: 'donotdeletemygroup'
+          backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+          backendAzureRmContainerName: 'mycontainer'
+          backendAzureRmKey: 'dev.terraform.tfstate'
+
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Terraform Plan Artifact'
+        inputs:
+          artifact: 'terraform-plan'
+          path: '$(Pipeline.Workspace)'
+
+      - task: TerraformTask@5
+        displayName: 'Apply Approved Terraform Plan'
+        inputs:
+          provider: 'azurerm'
+          command: 'apply'
+          workingDirectory: $(WORKING_DIR)
+          environmentServiceNameAzureRM: 'myazconnection'
+          commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
+
 
