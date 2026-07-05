@@ -23,6 +23,7 @@ variables:
   TF_PLAN_NAME: 'tfplan'
 
 
+
 stages:
   - stage: securityandcompliancecheck
     jobs:
@@ -116,7 +117,7 @@ stages:
               provider: 'azurerm'
               command: 'plan'
               workingDirectory: '$(WORKING_DIR)'
-              environmentServiceNameAzureRM: 'myazconnection'
+              environmentServiceNameAzureRM: 'azserviecconnection'
               commandOptions: '-out=$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
 
           - task: PublishPipelineArtifact@1
@@ -132,7 +133,7 @@ stages:
 
   - stage: TerraformApply
     displayName: 'Infrastructure Deployment'
-    dependsOn: TerraformPlan
+    dependsOn: TerraformInitializationandPlanningStage
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
     jobs:
@@ -193,7 +194,7 @@ stages:
           provider: 'azurerm'
           command: 'apply'
           workingDirectory: $(WORKING_DIR)
-          environmentServiceNameAzureRM: 'myazconnection'
+          environmentServiceNameAzureRM: 'azserviecconnection'
           commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
 
 
