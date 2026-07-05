@@ -187,7 +187,7 @@ stages:
         displayName: 'Download Terraform Plan Artifact'
         inputs:
           artifact: 'terraform-plan'
-          path: '$(Pipeline.Workspace)'
+          path: '$(Pipeline.Workspace)/terraform-plan'
 
       - task: TerraformTask@5
         displayName: 'Apply Approved Terraform Plan'
