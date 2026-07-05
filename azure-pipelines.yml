@@ -1,19 +1,93 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+trigger: none
+  # branches:
+  #   include:
+  #     - main 
 
-trigger:
-- main
 
-pool:
-  vmImage: ubuntu-latest
+pr:
+  branches:
+    include:
+      - main
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  azureServiceConnection: 'YOUR-AZURE-SERVICE-CONNECTION' 
+  terraformWorkingDirectory: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
+  terraformVersion: '1.15.6' 
+  resourceGroupName: 'aks-rg' 
+  aksClusterName: 'sammyaks' 
+  acrName: 'sammyacr' 
+  acrLoginServer: 'sammyacr.azurecr.io' 
+  imageRepository: 'microtodo-app' 
+  imageTag: '$(Build.BuildId)' 
+  kubernetesNamespace: 'dev'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+
+stages:
+  - stage: Security&ComplianceCheck
+    jobs:
+      - job: SecurityScanJob
+        displayName: Security Scan Job
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: '$(terraformVersion)'
+
+          - task: Bash@3
+            displayName: 'Install TFLint'
+            inputs:
+              targetType: 'inline'
+              script: |
+                curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip
+                unzip -o tflint_linux_amd64.zip
+                sudo install -c -v tflint /usr/local/bin/ 
+
+          - task: Bash@3
+            displayName: 'Install Checkov'
+            inputs:
+              targetType: 'inline'
+              script: |
+                python3 -m pip install --upgrade pip
+                pip3 install checkov
+                
+          - task: Bash@3
+            displayName: 'Run TFLint Scan'
+            continueOnError: true
+            inputs:
+              targetType: 'inline'
+              script: |
+                tflint --chdir=$(WORKING_DIR) --recursive       
+
+          - task: Bash@3
+            displayName: 'Run Checkov Scan'
+            continueOnError: true
+            inputs:
+              targetType: 'inline'
+              script: |
+                checkov -d $(WORKING_DIR) \
+                  --framework terraform \
+                  -o junitxml > Checkov-Result.xml      
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Checkov Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'Checkov-Result.xml'
+              failTaskOnFailedTests: false
+
+# ============================================================
+# Stage 2 - Terraform Plan
+# ============================================================
+
+  - stage: TerraformInitialization&PlanningStage
+    displayName: Terraform Initialization & Planning Stage
+    jobs:
+      - job:  TerraformInitialization&PlanningJob
+        displayName: Terraform Initialization & Planning Job
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: '$(terraformVersion)'
+
+              
+          
+
