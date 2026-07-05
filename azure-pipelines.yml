@@ -10,9 +10,9 @@ pr:
       - main
 
 variables:
-  azureServiceConnection: 'YOUR-AZURE-SERVICE-CONNECTION' 
+
   WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
-  terraformVersion: '1.15.6' 
+  TF_VERSION: '1.15.6' 
   resourceGroupName: 'aks-rg' 
   aksClusterName: 'sammyaks' 
   acrName: 'sammyacr' 
@@ -33,7 +33,7 @@ stages:
         steps:
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '$(terraformVersion)'
+              terraformVersion: '$(TF_VERSION)'
 
           - task: Bash@3
             displayName: 'Install TFLint'
@@ -89,7 +89,7 @@ stages:
         steps:
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: '$(terraformVersion)'
+              terraformVersion: '$(TF_VERSION)'
 
               
           - task: TerraformTask@5
