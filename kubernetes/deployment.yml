@@ -15,4 +15,4 @@ spec:
     spec:
       containers:
       - name: microtodo
-        image: acr.azurecr.io/microtodo-app:$(Build.BuildId)
+        image: IMAGE_PLACEHOLDER
