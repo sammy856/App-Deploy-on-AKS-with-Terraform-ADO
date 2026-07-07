@@ -278,6 +278,35 @@ stages:
                   --name $(aksClusterName) \
                   --overwrite-existing
 
+          - task: Bash@3
+            displayName: 'Check AKS DNS and Connection'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                echo "Kubeconfig server:"
+                kubectl config view --minify \
+                  -o jsonpath='{.clusters[0].cluster.server}'
+                echo
+
+                echo "AKS current FQDN from Azure:"
+                az aks show \
+                  --resource-group $(resourceGroupName) \
+                  --name $(aksClusterName) \
+                  --query fqdn \
+                  -o tsv
+
+                echo "DNS test:"
+                nslookup $(az aks show \
+                  --resource-group $(resourceGroupName) \
+                  --name $(aksClusterName) \
+                  --query fqdn \
+                  -o tsv)
+
+                echo "Cluster test:"
+                kubectl get nodes        
+
 
           - task: Bash@3
             displayName: 'Deploy Kubernetes Manifests'
