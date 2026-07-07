@@ -1,13 +1,13 @@
-trigger: 
-  branches:
-    include:
-      - main 
+trigger: none
+  # branches:
+  #   include:
+  #     - main 
 
 
-pr:
-  branches:
-    include:
-      - main
+# pr:
+#   branches:
+#     include:
+#       - main
 
 variables:
 
@@ -278,11 +278,13 @@ stages:
                   --name $(aksClusterName) \
                   --overwrite-existing
 
-          - task: Bash@3
+          - task: AzureCLI@2
             displayName: 'Check AKS DNS and Connection'
             inputs:
-              targetType: 'inline'
-              script: |
+              azureSubscription: '$(service_connection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
                 set -e
 
                 echo "Kubeconfig server:"
@@ -291,21 +293,19 @@ stages:
                 echo
 
                 echo "AKS current FQDN from Azure:"
-                az aks show \
-                  --resource-group $(resourceGroupName) \
-                  --name $(aksClusterName) \
-                  --query fqdn \
-                  -o tsv
-
-                echo "DNS test:"
-                nslookup $(az aks show \
+                AKS_FQDN=$(az aks show \
                   --resource-group $(resourceGroupName) \
                   --name $(aksClusterName) \
                   --query fqdn \
                   -o tsv)
 
-                echo "Cluster test:"
-                kubectl get nodes        
+                echo "$AKS_FQDN"
+
+                echo "DNS test:"
+                nslookup "$AKS_FQDN"
+
+                echo "Cluster connection test:"
+                kubectl get nodes
 
 
           - task: Bash@3
