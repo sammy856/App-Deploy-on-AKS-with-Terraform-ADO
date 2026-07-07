@@ -198,6 +198,62 @@ stages:
           environmentServiceNameAzureRM: '$(service_connection)'
           commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
 
+#--------------------------------------
+#CreateAnsibleInventoryStage
+#--------------------------------------
+
+  # - stage: CreateAnsibleInventory
+  #   displayName: Create Dynamic Ansible Inventory
+  #   dependsOn: TerraformApply
+  #   condition: succeeded()
+
+  #   jobs:
+  #   - job: CreateInventory
+
+  #     steps:
+
+  #     - task: TerraformInstaller@1
+  #       inputs:
+  #         terraformVersion: '$(TF_VERSION)'
+
+  #     - task: TerraformTask@5
+  #       displayName: Terraform Init
+  #       inputs:
+  #         provider: azurerm
+  #         command: init
+  #         workingDirectory: '$(WORKING_DIR)'
+  #         backendServiceArm: '$(service_connection)'
+  #         backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+  #         backendAzureRmResourceGroupName: 'donotdeletemygroup'
+  #         backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+  #         backendAzureRmContainerName: 'mycontainer'
+  #         backendAzureRmKey: 'dev.terraform.tfstate'
+
+  #     - bash: |
+  #         set -e
+
+  #         mkdir -p "$(Build.ArtifactStagingDirectory)/ansible"
+
+  #         echo "[webservers]" \
+  #           > "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+
+  #         terraform output -json ansible_target_ips \
+  #           | jq -r '.[]' \
+  #           >> "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+
+  #         echo ""
+  #         echo "Generated inventory:"
+  #         cat "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+
+  #       workingDirectory: '$(WORKING_DIR)'
+  #       displayName: Generate Inventory from Terraform Output
+
+  #     - publish: '$(Build.ArtifactStagingDirectory)/ansible'
+  #       artifact: ansible-inventory
+  #       displayName: Publish Ansible Inventory
+
+
+
 
 # ============================================================
 # Stage 4 - Build Image and Deploy to AKS
