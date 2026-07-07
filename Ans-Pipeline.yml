@@ -7,10 +7,10 @@ resources:
   - pipeline: infraPipeline
     source: infra-deployment-pipeline
 
-    trigger:
-      branches:
-        include:
-          - main
+    trigger: none
+      # branches:
+      #   include:
+      #     - main
 
 pool:
   name: 'my-self-hosted-pool'

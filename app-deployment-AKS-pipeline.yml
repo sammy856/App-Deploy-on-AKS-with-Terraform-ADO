@@ -1,0 +1,105 @@
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+
+    - pipeline: appPipeline
+      source: app-build-pipeline
+
+      trigger: none
+        # branches:
+        #   include:
+        #     - main
+
+variables:
+
+  service_connection: 'azserviecconnection'
+
+  resourceGroupName: 'donotdeletemygroup'
+
+  aksClusterName: 'sammyaks'
+
+  kubernetesNamespace: 'dev'
+
+# ============================================================
+# Job 2 - Deploy Application to AKS
+# ============================================================
+
+stages:
+  - stage: DeployToAKS
+    displayName: 'Deploy Application to AKS'
+    jobs:
+      - job: DeployToAKS
+        displayName: 'Deploy Application to AKS'
+        dependsOn: BuildAndPushImage
+
+        steps:
+
+          - task: AzureCLI@2
+            displayName: 'Connect to AKS'
+            inputs:
+              azureSubscription: '$(service_connection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                
+                az aks get-credentials \
+                  --resource-group $(resourceGroupName) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+
+
+
+          - task: Bash@3
+            displayName: 'Deploy Kubernetes Manifests'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                # Create namespace
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/namespace.yml
+
+                # Replace image placeholder with current Build ID image
+                sed -i \
+                  "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
+                  $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
+
+                # Deploy application
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
+
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/service.yml
+
+
+          - task: Bash@3
+            displayName: 'Verify Kubernetes Deployment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                kubectl rollout status \
+                  deployment/dev-deployment \
+                  --namespace $(kubernetesNamespace) \
+                  --timeout=300s
+
+                echo "=============================="
+                echo "PODS"
+                echo "=============================="
+
+                kubectl get pods \
+                  --namespace $(kubernetesNamespace) \
+                  -o wide
+
+                echo "=============================="
+                echo "SERVICES"
+                echo "=============================="
+
+                kubectl get services \
+                  --namespace $(kubernetesNamespace)  
