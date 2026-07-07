@@ -278,34 +278,7 @@ stages:
                   --name $(aksClusterName) \
                   --overwrite-existing
 
-          - task: AzureCLI@2
-            displayName: 'Check AKS DNS and Connection'
-            inputs:
-              azureSubscription: '$(service_connection)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                set -e
 
-                echo "Kubeconfig server:"
-                kubectl config view --minify \
-                  -o jsonpath='{.clusters[0].cluster.server}'
-                echo
-
-                echo "AKS current FQDN from Azure:"
-                AKS_FQDN=$(az aks show \
-                  --resource-group $(resourceGroupName) \
-                  --name $(aksClusterName) \
-                  --query fqdn \
-                  -o tsv)
-
-                echo "$AKS_FQDN"
-
-                echo "DNS test:"
-                nslookup "$AKS_FQDN"
-
-                echo "Cluster connection test:"
-                kubectl get nodes
 
 
           - task: Bash@3
