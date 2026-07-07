@@ -1,0 +1,61 @@
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+
+  - pipeline: infraPipeline
+    source: infra-deployment-pipeline
+
+    trigger:
+      branches:
+        include:
+          - main
+
+pool:
+  name: 'my-self-hosted-pool'
+
+stages:
+
+- stage: ConfigureServers
+  displayName: Configure Servers with Ansible
+
+  jobs:
+
+  - job: AnsibleConfiguration
+
+    steps:
+
+    - checkout: self
+
+    - download: infraPipeline
+      artifact: ansible-inventory
+
+    - bash: |
+        echo "Inventory received from Terraform pipeline:"
+        cat "$(Pipeline.Workspace)/infraPipeline/ansible-inventory/inventory.ini"
+      displayName: Check Dynamic Inventory
+
+    - task: InstallSSHKey@0
+      inputs:
+        knownHostsEntry: '$(KNOWN_HOST_ENTRY)'
+        sshPublicKey: '$(SSH_PUBLIC_KEY)'
+        sshKeySecureFile: 'linux-vm-private-key'
+
+    - bash: |
+        ansible all \
+          -i "$(Pipeline.Workspace)/infraPipeline/ansible-inventory/inventory.ini" \
+          -m ping \
+          -u azureuser \
+          --private-key "$(Agent.TempDirectory)/linux-vm-private-key"
+
+      displayName: Test Ansible Connectivity
+
+    - bash: |
+        ansible-playbook \
+          -i "$(Pipeline.Workspace)/infraPipeline/ansible-inventory/inventory.ini" \
+          playbooks/configure-server.yml \
+          -u azureuser \
+          --private-key "$(Agent.TempDirectory)/linux-vm-private-key"
+
+      displayName: Run Ansible Playbook
