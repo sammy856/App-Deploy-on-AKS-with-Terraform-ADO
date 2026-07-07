@@ -13,10 +13,10 @@ variables:
 
   WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
   TF_VERSION: '1.15.6' 
-  resourceGroupName: 'aks-rg' 
+  resourceGroupName: 'donotdeletemygroup' 
   aksClusterName: 'sammyaks' 
-  acrName: 'sammyacr' 
-  acrLoginServer: 'sammyacr.azurecr.io' 
+  acrName: 'sameeracr' 
+  acrLoginServer: 'sameeracr.azurecr.io' 
   imageRepository: 'microtodo-app' 
   imageTag: '$(Build.BuildId)' 
   kubernetesNamespace: 'dev'
