@@ -251,3 +251,139 @@ stages:
   #     - publish: '$(Build.ArtifactStagingDirectory)/ansible'
   #       artifact: ansible-inventory
   #       displayName: Publish Ansible Inventory
+
+
+
+
+# ============================================================
+# Stage 4 - Build Image and Deploy to AKS
+# ============================================================
+
+  - stage: AppBuildAndDeploy
+    displayName: 'Build Image and Deploy to AKS'
+    dependsOn: TerraformApplyStage
+    condition: and(
+      succeeded(),
+      eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
+
+    jobs:
+
+# ============================================================
+# Job 1 - Build and Push Docker Image
+# ============================================================
+
+      - job: BuildAndPushImage
+        displayName: 'Build and Push Docker Image to ACR'
+
+        steps:
+
+          - task: AzureCLI@2
+            displayName: 'Login to ACR'
+            inputs:
+              azureSubscription: '$(service_connection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az acr login --name $(acrName)
+
+          - task: Bash@3
+            displayName: 'Build Docker Image'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                docker build \
+                  -f $(System.DefaultWorkingDirectory)/MicroTodoUI/Dockerfile \
+                  -t $(acrLoginServer)/$(imageRepository):$(imageTag) \
+                  $(System.DefaultWorkingDirectory)/MicroTodoUI
+
+          - task: Bash@3
+            displayName: 'Push Docker Image to ACR'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                docker push \
+                  $(acrLoginServer)/$(imageRepository):$(imageTag)
+
+
+# ============================================================
+# Job 2 - Deploy Application to AKS
+# ============================================================
+
+      - job: DeployToAKS
+        displayName: 'Deploy Application to AKS'
+        dependsOn: BuildAndPushImage
+
+        steps:
+
+          - task: AzureCLI@2
+            displayName: 'Connect to AKS'
+            inputs:
+              azureSubscription: '$(service_connection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                
+                az aks get-credentials \
+                  --resource-group $(resourceGroupName) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+
+
+
+          - task: Bash@3
+            displayName: 'Deploy Kubernetes Manifests'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                # Create namespace
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/namespace.yml
+
+                # Replace image placeholder with current Build ID image
+                sed -i \
+                  "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
+                  $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
+
+                # Deploy application
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
+
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/service.yml
+
+
+          - task: Bash@3
+            displayName: 'Verify Kubernetes Deployment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+
+                kubectl rollout status \
+                  deployment/dev-deployment \
+                  --namespace $(kubernetesNamespace) \
+                  --timeout=300s
+
+                echo "=============================="
+                echo "PODS"
+                echo "=============================="
+
+                kubectl get pods \
+                  --namespace $(kubernetesNamespace) \
+                  -o wide
+
+                echo "=============================="
+                echo "SERVICES"
+                echo "=============================="
+
+                kubectl get services \
+                  --namespace $(kubernetesNamespace)
