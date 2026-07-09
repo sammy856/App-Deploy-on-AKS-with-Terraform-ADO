@@ -348,8 +348,8 @@ stages:
                   "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
                   "$(WORKING_DIR)/deployment.yaml"
 
-                echo "Updated deployment.yaml:"
-                cat "$(WORKING_DIR)/deployment.yaml"
+                # echo "Updated deployment.yaml:"
+                # cat "$(WORKING_DIR)/deployment.yaml"
 
 
           # 2. Deployment apply karo
