@@ -15,6 +15,11 @@ module "aks" {
   # depends_on        = [module.rgs]
 }
 
+module "application_gateway" {
+  source = "../../modules/application_gateway"
+  appgwdetails = var.application_gateway_values
+}
+
 
 # resource "azurerm_role_assignment" "acr_pull" {
 

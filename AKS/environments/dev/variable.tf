@@ -28,3 +28,21 @@ variable "aks_clusters_values" {
   }))
 }
 
+
+variable "application_gateway_values" {
+  type = map(object({
+    name                = string
+    location            = string
+    rgname              = string
+
+    vnet_name           = string
+    vnet_rgname         = string
+    subnet_name         = string
+
+    public_ip_name      = string
+
+    sku_name            = string
+    sku_tier            = string
+    capacity            = number
+  }))
+}

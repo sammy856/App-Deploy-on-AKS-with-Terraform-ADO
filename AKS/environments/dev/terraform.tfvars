@@ -30,3 +30,21 @@ acrs_values = {
   }
 }
 
+
+application_gateway_values = {
+  appgw = {
+    name     = "sammy-appgw"
+    location = "japan east"
+    rgname   = "donotdeletemygroup"
+
+    vnet_name   = "aks-vnet-36135508"
+    vnet_rgname = "MC_donotdeletemygroup_sammyaks_japaneast"
+    subnet_name = "aks-appgateway"
+
+    public_ip_name = "sammy-appgw-pip"
+
+    sku_name = "Standard_v2"
+    sku_tier = "Standard_v2"
+    capacity = 2
+  }
+}
