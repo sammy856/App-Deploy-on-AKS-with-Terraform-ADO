@@ -341,8 +341,8 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                echo "New image:"
-                echo "$(acrLoginServer)/$(imageRepository):$(imageTag)"
+                # echo "New image:"
+                # echo "$(acrLoginServer)/$(imageRepository):$(imageTag)"
 
                 sed -i \
                   "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
