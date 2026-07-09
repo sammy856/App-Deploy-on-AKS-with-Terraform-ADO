@@ -1,10 +1,23 @@
 # Existing Application Gateway subnet ko read karega
-data "azurerm_subnet" "appgw_subnet" {
+# data "azurerm_subnet" "appgw_subnet" {
+#   for_each = var.appgwdetails
+
+#   name                 = each.value.subnet_name
+#   virtual_network_name = each.value.vnet_name
+#   resource_group_name  = each.value.vnet_rgname
+# }
+
+
+resource "azurerm_subnet" "appgw_subnet" {
   for_each = var.appgwdetails
 
   name                 = each.value.subnet_name
-  virtual_network_name = each.value.vnet_name
   resource_group_name  = each.value.vnet_rgname
+  virtual_network_name = each.value.vnet_name
+
+  address_prefixes = [
+    each.value.subnet_address_prefix
+  ]
 }
 
 
@@ -38,7 +51,7 @@ resource "azurerm_application_gateway" "appgw" {
   gateway_ip_configuration {
     name = "appgw-ip-configuration"
 
-    subnet_id = data.azurerm_subnet.appgw_subnet[each.key].id
+    subnet_id = azurerm_subnet.appgw_subnet[each.key].id
   }
 
   frontend_ip_configuration {

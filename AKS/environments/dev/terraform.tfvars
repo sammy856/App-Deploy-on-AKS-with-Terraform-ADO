@@ -39,7 +39,9 @@ application_gateway_values = {
 
     vnet_name   = "aks-vnet-36135508"
     vnet_rgname = "MC_donotdeletemygroup_sammyaks_japaneast"
-    subnet_name = "aks-appgateway"
+
+    subnet_name           = "classic-appgw-subnet"
+    subnet_address_prefix = "10.225.0.0/24"
 
     public_ip_name = "sammy-appgw-pip"
 
