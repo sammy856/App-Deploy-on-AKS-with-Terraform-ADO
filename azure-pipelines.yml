@@ -346,7 +346,7 @@ stages:
 
                 sed -i \
                   "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
-                  "$(WORKING_DIR)/deployment.yaml"
+                  "$(System.DefaultWorkingDirectory)/kubernetes/deployment.yml"
 
                 # echo "Updated deployment.yaml:"
                 # cat "$(WORKING_DIR)/deployment.yaml"
@@ -363,7 +363,7 @@ stages:
               namespace: '$(kubernetesNamespace)'
               command: 'apply'
               useConfigurationFile: true
-              configuration: '$(WORKING_DIR)/deployment.yaml'
+              configuration: '$(System.DefaultWorkingDirectory)/kubernetes/deployment.yml'
 
 
           # 3. ClusterIP Service apply karo
@@ -377,7 +377,7 @@ stages:
               namespace: '$(kubernetesNamespace)'
               command: 'apply'
               useConfigurationFile: true
-              configuration: '$(WORKING_DIR)/service.yaml'
+              configuration: '$(System.DefaultWorkingDirectory)/kubernetes/service.yml'
 
 
           # 4. Ingress rule apply karo
@@ -391,7 +391,7 @@ stages:
               namespace: '$(kubernetesNamespace)'
               command: 'apply'
               useConfigurationFile: true
-              configuration: '$(WORKING_DIR)/ingress.yaml'
+              configuration: '$(System.DefaultWorkingDirectory)/kubernetes/ingress.yaml'
 
 
           # 5. New Pods ka rollout complete hone ka wait karo
