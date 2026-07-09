@@ -335,55 +335,74 @@ stages:
                   --overwrite-existing
 
 
-
-
+          # 1. IMAGE_PLACEHOLDER ko actual image se replace karo
           - task: Bash@3
-            displayName: 'Deploy Kubernetes Manifests'
+            displayName: 'Update Image in Deployment YAML'
             inputs:
               targetType: 'inline'
               script: |
-                set -e
+                echo "New image:"
+                echo "$(acrLoginServer)/$(imageRepository):$(imageTag)"
 
-                # Create namespace
-                kubectl apply \
-                  -f $(System.DefaultWorkingDirectory)/kubernetes/namespace.yml
-
-                # Replace image placeholder with current Build ID image
                 sed -i \
                   "s|IMAGE_PLACEHOLDER|$(acrLoginServer)/$(imageRepository):$(imageTag)|g" \
-                  $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
+                  "$(WORKING_DIR)/deployment.yaml"
 
-                # Deploy application
-                kubectl apply \
-                  -f $(System.DefaultWorkingDirectory)/kubernetes/deployment.yml
-
-                kubectl apply \
-                  -f $(System.DefaultWorkingDirectory)/kubernetes/service.yml
+                echo "Updated deployment.yaml:"
+                cat "$(WORKING_DIR)/deployment.yaml"
 
 
-          - task: Bash@3
-            displayName: 'Verify Kubernetes Deployment'
+          # 2. Deployment apply karo
+          - task: Kubernetes@1
+            displayName: 'Apply Kubernetes Deployment'
             inputs:
-              targetType: 'inline'
-              script: |
-                set -e
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(service_connection)'
+              azureResourceGroup: '$(resourceGroupName)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: '$(WORKING_DIR)/deployment.yaml'
 
-                kubectl rollout status \
-                  deployment/dev-deployment \
-                  --namespace $(kubernetesNamespace) \
-                  --timeout=300s
 
-                echo "=============================="
-                echo "PODS"
-                echo "=============================="
+          # 3. ClusterIP Service apply karo
+          - task: Kubernetes@1
+            displayName: 'Apply ClusterIP Service'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(service_connection)'
+              azureResourceGroup: '$(resourceGroupName)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: '$(WORKING_DIR)/service.yaml'
 
-                kubectl get pods \
-                  --namespace $(kubernetesNamespace) \
-                  -o wide
 
-                echo "=============================="
-                echo "SERVICES"
-                echo "=============================="
+          # 4. Ingress rule apply karo
+          - task: Kubernetes@1
+            displayName: 'Apply Application Ingress'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(service_connection)'
+              azureResourceGroup: '$(resourceGroupName)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: '$(WORKING_DIR)/ingress.yaml'
 
-                kubectl get services \
-                  --namespace $(kubernetesNamespace)
+
+          # 5. New Pods ka rollout complete hone ka wait karo
+          - task: Kubernetes@1
+            displayName: 'Verify Deployment Rollout'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(service_connection)'
+              azureResourceGroup: '$(resourceGroupName)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'rollout'
+              arguments: 'status deployment/dev-deployment --timeout=5m'
+
