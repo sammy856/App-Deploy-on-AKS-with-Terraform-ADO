@@ -30,6 +30,7 @@ variables:
   kubernetesNamespace: 'dev'
   TF_PLAN_NAME: 'tfplan'
   service_connection: 'azserviecconnection'
+  subscription_id: '72f60f06-6468-4fce-a560-3651ff202b82'
 
 
 
@@ -107,7 +108,7 @@ stages:
               command: 'init'
               workingDirectory: $(WORKING_DIR)
               backendServiceArm: '$(service_connection)'
-              backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+              backendAzureRmOverrideSubscriptionID: $(subscription_id)
               backendAzureRmResourceGroupName: 'donotdeletemygroup'
               backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
               backendAzureRmContainerName: 'mycontainer'
