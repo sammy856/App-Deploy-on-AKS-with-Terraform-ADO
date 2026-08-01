@@ -11,3 +11,9 @@ variable "aksclusterdetails" {
     vm_size             = string
   }))
 }
+
+variable "application_gateway_id" {
+  description = "Resource ID of the Application Gateway for AGIC addon integration"
+  type        = string
+  default     = null
+}

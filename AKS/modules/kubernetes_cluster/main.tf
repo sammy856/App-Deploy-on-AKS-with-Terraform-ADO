@@ -18,6 +18,23 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
 
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
+
+  role_based_access_control_enabled = true
+
+  network_profile {
+    network_plugin = "azure"
+    network_policy = "azure"
+  }
+
+  dynamic "ingress_application_gateway" {
+    for_each = var.application_gateway_id != null ? [1] : []
+    content {
+      gateway_id = var.application_gateway_id
+    }
+  }
+
   tags = {
     Environment = "Dev"
   }

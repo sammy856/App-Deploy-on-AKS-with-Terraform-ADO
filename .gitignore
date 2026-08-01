@@ -1,0 +1,15 @@
+# Local .terraform directories
+**/.terraform/
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc

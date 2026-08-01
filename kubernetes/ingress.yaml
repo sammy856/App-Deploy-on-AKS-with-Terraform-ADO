@@ -4,9 +4,11 @@ kind: Ingress
 metadata:
   name: dev-ingress
   namespace: dev
+  annotations:
+    appgw.ingress.kubernetes.io/ssl-redirect: "false"
 
 spec:
-  ingressClassName: nginx
+  ingressClassName: azure-application-gateway
 
   rules:
     - http:

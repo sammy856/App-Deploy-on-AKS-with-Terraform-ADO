@@ -1,9 +1,11 @@
-# resource_groups_values = {
-#   rg1 = {
-#     rgname   = "donotdeletemygroup"
-#     location = "japan east"
-#   }
-# }
+subscription_id = "8432b329-2a25-4ccb-9771-c72ad6d864df"
+
+resource_groups_values = {
+   rg1 = {
+    rgname   = "donotdeletemygroup"
+    location = "japan east"
+  }
+}
 
 
 

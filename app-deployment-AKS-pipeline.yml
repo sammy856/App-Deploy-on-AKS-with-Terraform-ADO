@@ -76,6 +76,9 @@ stages:
                 kubectl apply \
                   -f $(System.DefaultWorkingDirectory)/kubernetes/service.yml
 
+                kubectl apply \
+                  -f $(System.DefaultWorkingDirectory)/kubernetes/ingress.yaml
+
 
           - task: Bash@3
             displayName: 'Verify Kubernetes Deployment'

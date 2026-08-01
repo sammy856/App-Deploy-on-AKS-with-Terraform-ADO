@@ -16,5 +16,15 @@ spec:
       containers:
       - name: microtodo
         image: IMAGE_PLACEHOLDER
+        ports:
+        - containerPort: 80 
 
+        volumeMounts:
+        - name: nginx-volume
+          mountPath: /usr/share/nginx/html
+
+      volumes:
+        - name: nginx-volume
+          persistentVolumeClaim:
+            claimName: nginx-pvc
         
