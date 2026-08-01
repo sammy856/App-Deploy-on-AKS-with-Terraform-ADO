@@ -1,12 +1,14 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nginx-pvc
+  name: microtodo-pvc
   namespace: dev
 
 spec:
   accessModes:
     - ReadWriteOnce
+
+  storageClassName: managed-csi  
 
   resources:
     requests:

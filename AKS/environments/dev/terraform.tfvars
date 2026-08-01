@@ -1,7 +1,7 @@
 subscription_id = "8432b329-2a25-4ccb-9771-c72ad6d864df"
 
 resource_groups_values = {
-   rg1 = {
+  rg1 = {
     rgname   = "donotdeletemygroup"
     location = "japan east"
   }
@@ -52,3 +52,19 @@ application_gateway_values = {
     capacity = 2
   }
 }
+
+sql_databases_values = {
+  sqldb = {
+    server_name = "sammy-sql-server-dev"
+    db_name     = "sammy-sqldb"
+    location    = "japan east"
+    rgname      = "donotdeletemygroup"
+    sku_name    = "Basic"
+  }
+}
+
+keyvault_name           = "sammy-keyvault"
+keyvault_rgname         = "donotdeletemygroup"
+db_username_secret_name = "db-username"
+db_password_secret_name = "db-password"
+

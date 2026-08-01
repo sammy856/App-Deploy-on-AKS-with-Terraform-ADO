@@ -14,17 +14,17 @@ spec:
         app: microtodo
     spec:
       containers:
-      - name: microtodo
+      - name: microtodo-container
         image: IMAGE_PLACEHOLDER
         ports:
         - containerPort: 80 
 
         volumeMounts:
-        - name: nginx-volume
+        - name: microtodo-volume
           mountPath: /usr/share/nginx/html
 
       volumes:
-        - name: nginx-volume
+        - name: microtodo-volume
           persistentVolumeClaim:
-            claimName: nginx-pvc
+            claimName: microtodo-pvc
         

@@ -8,6 +8,6 @@
       app: microtodo
     ports:
     - name: http-nginx
-      port: 80
+      port: 7777
       targetPort: 80
     type: ClusterIP
