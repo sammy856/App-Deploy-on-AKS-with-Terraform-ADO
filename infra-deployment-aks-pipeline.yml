@@ -1,265 +1,295 @@
-
-
-
-#############################################
-
-
-
-
 trigger: none
-  # branches:
-  #   include:
-  #     - main 
-
-
-# pr:
-#   branches:
-#     include:
-#       - main
 
 variables:
 
-  WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
-  TF_VERSION: '1.15.6' 
-  resourceGroupName: 'donotdeletemygroup' 
-  aksClusterName: 'sammyaks' 
-  acrName: 'sameeracr' 
-  acrLoginServer: 'sameeracr.azurecr.io' 
-  imageRepository: 'microtodo-app' 
-  imageTag: '$(Build.BuildId)' 
-  kubernetesNamespace: 'dev'
+  WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev'
+  TF_VERSION: '1.15.6'
+  resourceGroupName: 'donotdeletemygroup'
+  aksClusterName: 'sammyaks'
+  acrName: 'sameeracr'
+  acrLoginServer: 'sameeracr.azureacr.io'
+  imageRepository: 'microtodo-app-repo'
+  imageTag: '$(Build.BuildId)'
+  kubernetesNameSpace: 'dev'
   TF_PLAN_NAME: 'tfplan'
-  service_connection: 'azserviecconnection'
+  service_connection: 'azserviceconnection'
   subscription_id: '72f60f06-6468-4fce-a560-3651ff202b82'
 
 
-
 stages:
-  - stage: securityandcompliancecheck
+  - stage: SecurityAndComplianceCheck
+    displayName: Security And Compliance Check
     jobs:
-      - job: SecurityScanJob
-        displayName: Security Scan Job
+      - job: CodeSecurityScanJob
+        displayName: Code Security Scan Job  
         steps:
-          - task: TerraformInstaller@1
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
+          
 
-          - task: Bash@3
-            displayName: 'Install TFLint'
-            inputs:
-              targetType: 'inline'
-              script: |
-                curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip
-                unzip -o tflint_linux_amd64.zip
-                sudo install -c -v tflint /usr/local/bin/ 
 
-          - task: Bash@3
-            displayName: 'Install Checkov'
-            inputs:
-              targetType: 'inline'
-              script: |
-                python3 -m pip install --upgrade pip
-                pip3 install checkov
+
+# #############################################
+
+
+
+
+# trigger: none
+#   # branches:
+#   #   include:
+#   #     - main 
+
+
+# # pr:
+# #   branches:
+# #     include:
+# #       - main
+
+# variables:
+
+#   WORKING_DIR: '$(System.DefaultWorkingDirectory)/AKS/environments/dev' 
+#   TF_VERSION: '1.15.6' 
+#   resourceGroupName: 'donotdeletemygroup' 
+#   aksClusterName: 'sammyaks' 
+#   acrName: 'sameeracr' 
+#   acrLoginServer: 'sameeracr.azurecr.io' 
+#   imageRepository: 'microtodo-app' 
+#   imageTag: '$(Build.BuildId)' 
+#   kubernetesNamespace: 'dev'
+#   TF_PLAN_NAME: 'tfplan'
+#   service_connection: 'azserviecconnection'
+#   subscription_id: '72f60f06-6468-4fce-a560-3651ff202b82'
+
+
+
+# stages:
+#   - stage: securityandcompliancecheck
+#     jobs:
+#       - job: SecurityScanJob
+#         displayName: Security Scan Job
+#         steps:
+#           - task: TerraformInstaller@1
+#             inputs:
+#               terraformVersion: '$(TF_VERSION)'
+
+#           - task: Bash@3
+#             displayName: 'Install TFLint'
+#             inputs:
+#               targetType: 'inline'
+#               script: |
+#                 curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip
+#                 unzip -o tflint_linux_amd64.zip
+#                 sudo install -c -v tflint /usr/local/bin/ 
+
+#           - task: Bash@3
+#             displayName: 'Install Checkov'
+#             inputs:
+#               targetType: 'inline'
+#               script: |
+#                 python3 -m pip install --upgrade pip
+#                 pip3 install checkov
                 
-          - task: Bash@3
-            displayName: 'Run TFLint Scan'
-            continueOnError: true
-            inputs:
-              targetType: 'inline'
-              script: |
-                tflint --chdir=$(System.DefaultWorkingDirectory) --recursive       
+#           - task: Bash@3
+#             displayName: 'Run TFLint Scan'
+#             continueOnError: true
+#             inputs:
+#               targetType: 'inline'
+#               script: |
+#                 tflint --chdir=$(System.DefaultWorkingDirectory) --recursive       
 
-          - task: Bash@3
-            displayName: 'Run Checkov Scan'
-            continueOnError: true
-            inputs:
-              targetType: 'inline'
-              script: |
-                checkov -d $(System.DefaultWorkingDirectory) \
-                  --framework terraform \
-                  -o junitxml > Checkov-Result.xml      
+#           - task: Bash@3
+#             displayName: 'Run Checkov Scan'
+#             continueOnError: true
+#             inputs:
+#               targetType: 'inline'
+#               script: |
+#                 checkov -d $(System.DefaultWorkingDirectory) \
+#                   --framework terraform \
+#                   -o junitxml > Checkov-Result.xml      
 
-          - task: PublishTestResults@2
-            displayName: 'Publish Checkov Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'Checkov-Result.xml'
-              failTaskOnFailedTests: false
+#           - task: PublishTestResults@2
+#             displayName: 'Publish Checkov Results'
+#             inputs:
+#               testResultsFormat: 'JUnit'
+#               testResultsFiles: 'Checkov-Result.xml'
+#               failTaskOnFailedTests: false
 
-# ============================================================
-# Stage 2 - Terraform Plan
-# ============================================================
+# # ============================================================
+# # Stage 2 - Terraform Plan
+# # ============================================================
 
-  - stage: TerraformInitializationandPlanningStage
-    displayName: Terraform Initialization & Planning Stage
-    jobs:
-      - job:  TerraformInitializationandPlanningJob
-        displayName: Terraform Initialization & Planning Job
-        steps:
-          - task: TerraformInstaller@1
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
+#   - stage: TerraformInitializationandPlanningStage
+#     displayName: Terraform Initialization & Planning Stage
+#     jobs:
+#       - job:  TerraformInitializationandPlanningJob
+#         displayName: Terraform Initialization & Planning Job
+#         steps:
+#           - task: TerraformInstaller@1
+#             inputs:
+#               terraformVersion: '$(TF_VERSION)'
 
               
-          - task: TerraformTask@5
-            displayName: Terraform Init
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: $(WORKING_DIR)
-              backendServiceArm: '$(service_connection)'
-              backendAzureRmOverrideSubscriptionID: $(subscription_id)
-              backendAzureRmResourceGroupName: 'donotdeletemygroup'
-              backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
-              backendAzureRmContainerName: 'mycontainer'
-              backendAzureRmKey: 'dev.terraform.tfstate'
+#           - task: TerraformTask@5
+#             displayName: Terraform Init
+#             inputs:
+#               provider: 'azurerm'
+#               command: 'init'
+#               workingDirectory: $(WORKING_DIR)
+#               backendServiceArm: '$(service_connection)'
+#               backendAzureRmOverrideSubscriptionID: $(subscription_id)
+#               backendAzureRmResourceGroupName: 'donotdeletemygroup'
+#               backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+#               backendAzureRmContainerName: 'mycontainer'
+#               backendAzureRmKey: 'dev.terraform.tfstate'
 
-          - task: TerraformTask@5
-            displayName: Terraform Validate
-            inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: $(WORKING_DIR)
+#           - task: TerraformTask@5
+#             displayName: Terraform Validate
+#             inputs:
+#               provider: 'azurerm'
+#               command: 'validate'
+#               workingDirectory: $(WORKING_DIR)
 
-          - task: TerraformTask@5
-            displayName: 'Terraform Plan'
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(WORKING_DIR)'
-              environmentServiceNameAzureRM: '$(service_connection)'
-              commandOptions: '-out=$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
+#           - task: TerraformTask@5
+#             displayName: 'Terraform Plan'
+#             inputs:
+#               provider: 'azurerm'
+#               command: 'plan'
+#               workingDirectory: '$(WORKING_DIR)'
+#               environmentServiceNameAzureRM: '$(service_connection)'
+#               commandOptions: '-out=$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
 
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Terraform Plan Artifact'
-            inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
-              artifact: 'terraform-plan'
-              publishLocation: 'pipeline'
+#           - task: PublishPipelineArtifact@1
+#             displayName: 'Publish Terraform Plan Artifact'
+#             inputs:
+#               targetPath: '$(System.DefaultWorkingDirectory)/AKS/$(TF_PLAN_NAME)'
+#               artifact: 'terraform-plan'
+#               publishLocation: 'pipeline'
 
-# ============================================================
-# Stage 3 - Terraform Apply
-# ============================================================
+# # ============================================================
+# # Stage 3 - Terraform Apply
+# # ============================================================
 
-  - stage: TerraformApplyStage
-    displayName: 'Terraform Infrastructure Deployment'
-    dependsOn: TerraformInitializationandPlanningStage
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+#   - stage: TerraformApplyStage
+#     displayName: 'Terraform Infrastructure Deployment'
+#     dependsOn: TerraformInitializationandPlanningStage
+#     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
-    jobs:
+#     jobs:
 
-    # ==========================================================
-    # Manual Approval
-    # ==========================================================
-    - job: ManualApproval
-      displayName: 'Infrastructure Change Approval'
-      pool: server
+#     # ==========================================================
+#     # Manual Approval
+#     # ==========================================================
+#     - job: ManualApproval
+#       displayName: 'Infrastructure Change Approval'
+#       pool: server
 
-      steps:
-      - task: ManualValidation@0
-        displayName: 'Review Terraform Plan'
-        timeoutInMinutes: 1440
-        inputs:
-          notifyUsers: |
-            benamikumar@gmail.com
-          instructions: |
-            Please review Terraform plan output and approve deployment.
-          onTimeout: reject
+#       steps:
+#       - task: ManualValidation@0
+#         displayName: 'Review Terraform Plan'
+#         timeoutInMinutes: 1440
+#         inputs:
+#           notifyUsers: |
+#             benamikumar@gmail.com
+#           instructions: |
+#             Please review Terraform plan output and approve deployment.
+#           onTimeout: reject
 
-    # ==========================================================
-    # Terraform Apply
-    # ==========================================================
-    - job: TerraformApplyJob
-      displayName: 'Apply Approved Infrastructure Changes'
-      dependsOn: ManualApproval
+#     # ==========================================================
+#     # Terraform Apply
+#     # ==========================================================
+#     - job: TerraformApplyJob
+#       displayName: 'Apply Approved Infrastructure Changes'
+#       dependsOn: ManualApproval
 
-      steps:
+#       steps:
 
-      - task: TerraformInstaller@1
-        displayName: 'Install Terraform CLI'
-        inputs:
-          terraformVersion: $(TF_VERSION)
+#       - task: TerraformInstaller@1
+#         displayName: 'Install Terraform CLI'
+#         inputs:
+#           terraformVersion: $(TF_VERSION)
 
-      - task: TerraformTask@5
-        inputs:
-          provider: 'azurerm'
-          command: 'init'
-          workingDirectory: '$(WORKING_DIR)'
-          backendServiceArm: '$(service_connection)'
-          backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
-          backendAzureRmResourceGroupName: 'donotdeletemygroup'
-          backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
-          backendAzureRmContainerName: 'mycontainer'
-          backendAzureRmKey: 'dev.terraform.tfstate'
+#       - task: TerraformTask@5
+#         inputs:
+#           provider: 'azurerm'
+#           command: 'init'
+#           workingDirectory: '$(WORKING_DIR)'
+#           backendServiceArm: '$(service_connection)'
+#           backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+#           backendAzureRmResourceGroupName: 'donotdeletemygroup'
+#           backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+#           backendAzureRmContainerName: 'mycontainer'
+#           backendAzureRmKey: 'dev.terraform.tfstate'
 
-      - task: DownloadPipelineArtifact@2
-        displayName: 'Download Terraform Plan Artifact'
-        inputs:
-          artifact: 'terraform-plan'
-          path: '$(Pipeline.Workspace)/terraform-plan'
+#       - task: DownloadPipelineArtifact@2
+#         displayName: 'Download Terraform Plan Artifact'
+#         inputs:
+#           artifact: 'terraform-plan'
+#           path: '$(Pipeline.Workspace)/terraform-plan'
 
-      - task: TerraformTask@5
-        displayName: 'Apply Approved Terraform Plan'
-        inputs:
-          provider: 'azurerm'
-          command: 'apply'
-          workingDirectory: $(WORKING_DIR)
-          environmentServiceNameAzureRM: '$(service_connection)'
-          commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
+#       - task: TerraformTask@5
+#         displayName: 'Apply Approved Terraform Plan'
+#         inputs:
+#           provider: 'azurerm'
+#           command: 'apply'
+#           workingDirectory: $(WORKING_DIR)
+#           environmentServiceNameAzureRM: '$(service_connection)'
+#           commandOptions: '$(Pipeline.Workspace)/terraform-plan/$(TF_PLAN_NAME)'
 
-#--------------------------------------
-#CreateAnsibleInventoryStage
-#--------------------------------------
+# #--------------------------------------
+# #CreateAnsibleInventoryStage
+# #--------------------------------------
 
-  # - stage: CreateAnsibleInventory
-  #   displayName: Create Dynamic Ansible Inventory
-  #   dependsOn: TerraformApply
-  #   condition: succeeded()
+#   # - stage: CreateAnsibleInventory
+#   #   displayName: Create Dynamic Ansible Inventory
+#   #   dependsOn: TerraformApply
+#   #   condition: succeeded()
 
-  #   jobs:
-  #   - job: CreateInventory
+#   #   jobs:
+#   #   - job: CreateInventory
 
-  #     steps:
+#   #     steps:
 
-  #     - task: TerraformInstaller@1
-  #       inputs:
-  #         terraformVersion: '$(TF_VERSION)'
+#   #     - task: TerraformInstaller@1
+#   #       inputs:
+#   #         terraformVersion: '$(TF_VERSION)'
 
-  #     - task: TerraformTask@5
-  #       displayName: Terraform Init
-  #       inputs:
-  #         provider: azurerm
-  #         command: init
-  #         workingDirectory: '$(WORKING_DIR)'
-  #         backendServiceArm: '$(service_connection)'
-  #         backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
-  #         backendAzureRmResourceGroupName: 'donotdeletemygroup'
-  #         backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
-  #         backendAzureRmContainerName: 'mycontainer'
-  #         backendAzureRmKey: 'dev.terraform.tfstate'
+#   #     - task: TerraformTask@5
+#   #       displayName: Terraform Init
+#   #       inputs:
+#   #         provider: azurerm
+#   #         command: init
+#   #         workingDirectory: '$(WORKING_DIR)'
+#   #         backendServiceArm: '$(service_connection)'
+#   #         backendAzureRmOverrideSubscriptionID: '712eeec0-3f6b-4702-8f88-dbfca33db4d0'
+#   #         backendAzureRmResourceGroupName: 'donotdeletemygroup'
+#   #         backendAzureRmStorageAccountName: 'donotdeletemystorageyaar'
+#   #         backendAzureRmContainerName: 'mycontainer'
+#   #         backendAzureRmKey: 'dev.terraform.tfstate'
 
-  #     - bash: |
-  #         set -e
+#   #     - bash: |
+#   #         set -e
 
-  #         mkdir -p "$(Build.ArtifactStagingDirectory)/ansible"
+#   #         mkdir -p "$(Build.ArtifactStagingDirectory)/ansible"
 
-  #         echo "[webservers]" \
-  #           > "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+#   #         echo "[webservers]" \
+#   #           > "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
 
-  #         terraform output -json ansible_target_ips \
-  #           | jq -r '.[]' \
-  #           >> "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+#   #         terraform output -json ansible_target_ips \
+#   #           | jq -r '.[]' \
+#   #           >> "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
 
-  #         echo ""
-  #         echo "Generated inventory:"
-  #         cat "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
+#   #         echo ""
+#   #         echo "Generated inventory:"
+#   #         cat "$(Build.ArtifactStagingDirectory)/ansible/inventory.ini"
 
-  #       workingDirectory: '$(WORKING_DIR)'
-  #       displayName: Generate Inventory from Terraform Output
+#   #       workingDirectory: '$(WORKING_DIR)'
+#   #       displayName: Generate Inventory from Terraform Output
 
-  #     - publish: '$(Build.ArtifactStagingDirectory)/ansible'
-  #       artifact: ansible-inventory
-  #       displayName: Publish Ansible Inventory
+#   #     - publish: '$(Build.ArtifactStagingDirectory)/ansible'
+#   #       artifact: ansible-inventory
+#   #       displayName: Publish Ansible Inventory
+
+###################################################################
+
+
 
 
 
