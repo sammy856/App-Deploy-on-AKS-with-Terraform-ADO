@@ -44,6 +44,30 @@ stages:
                 python3 -m pip install --upgrade pip
                  pip3 install checkov
 
+          - task: Bash@3
+            displayName: Running TF-Lint Scan
+            inputs:
+              targetType: 'inline'
+              script: |
+                tflint --chdir=$(System.DefaultWorkingDirectory)/AKS --recursive
+
+          - task: Bash@3
+            displayName: Running Checkov Scan
+            inputs:
+              targetType: 'inline'
+              script: |
+                checkov -d $(System.DefaultWorkingDirectory) \
+                  --framework terraform \
+                  -o junitxml > Checkov-Result.xml
+
+
+          - task: tfsec@1
+            displayName: Install And Run TFSEC
+            inputs:
+              version: 'v1.26.0'
+              args: './AKS'
+              dir: $(System.DefaultWorkingDirectory)
+
 
           
 
