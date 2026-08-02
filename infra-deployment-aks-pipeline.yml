@@ -23,6 +23,28 @@ stages:
       - job: CodeSecurityScanJob
         displayName: Code Security Scan Job  
         steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: $(TF_VERSION)
+
+          - task: Bash@3
+            displayName: Install TFLint
+            inputs:
+              targetType: 'inline'
+              script: |
+                curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip
+                unzip -o tflint_linux_amd64.zip
+                sudo install -c -v tflint /usr/local/bin/
+
+          - task: Bash@3
+            displayName: Install Checkov
+            inputs:
+              targetType: 'inline'
+              script: |
+                python3 -m pip install --upgrade pip
+                 pip3 install checkov
+
+
           
 
 
